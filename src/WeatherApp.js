@@ -1,6 +1,11 @@
 import React from 'react'
 import styled from "@emotion/styled"
 
+import { ReactComponent as CloudyIcon } from './assets/images/day-cloudy.svg';
+import { ReactComponent as AirFlowIcon } from './assets/images/airFlow.svg';
+import { ReactComponent as RainIcon } from './assets/images/rain.svg';
+import { ReactComponent as RedoIcon } from './assets/images/refresh.svg';
+
 const WeatherCard = styled.div`
     position: relative;
     min-width: 360px;
@@ -9,13 +14,101 @@ const WeatherCard = styled.div`
     box-sizing: border-box;
     padding: 30px 15px;
     text-align: start;
-  `
+    `
+const Location = styled.div`
+  font-size: 28px;
+  color: #212121;
+  margin-bottom: 20px;
+`;
+
+const Description = styled.div`
+  font-size: 16px;
+  color: #828282;
+  margin-bottom: 30px;
+`;
+
+const CurrentWeather = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+`;
+
+const Temperature = styled.div`
+  color: #757575;
+  font-size: 96px;
+  font-weight: 300;
+  display: flex;
+`;
+
+const Celsius = styled.div`
+  font-weight: normal;
+  font-size: 42px;
+`;
+
+const AirFlow = styled.div`
+  display: flex;
+  align-items: center;
+  font-size: 16x;
+  font-weight: 300;
+  color: #828282;
+  margin-bottom: 20px;
+  svg {
+    width: 25px;
+    height: auto;
+    margin-right: 30px;
+  }
+`;
+
+const Rain = styled.div`
+  display: flex;
+  align-items: center;
+  font-size: 16x;
+  font-weight: 300;
+  color: #828282;
+  svg {
+    width: 25px;
+    height: auto;
+    margin-right: 30px;
+  }
+`;
+
+const Redo = styled.div`
+  position: absolute;
+  right: 15px;
+  bottom: 15px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: flex-end;
+  color: #828282;
+
+  svg {
+    margin-left: 10px;
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+  }
+` 
+
 
 const WeatherApp = () => {
 
   return (
     <WeatherCard>
-      <h1>Weather</h1>
+      <Location>台北市</Location>
+      <Description>多雲時晴</Description>
+      <CurrentWeather>
+        <Temperature>
+          23 <Celsius>°C</Celsius>
+        </Temperature>
+        <CloudyIcon />
+      </CurrentWeather>
+      <AirFlow>
+        <AirFlowIcon />
+        23 m/h
+      </AirFlow>
+      <Rain><RainIcon />48%</Rain>
+      <Redo><RedoIcon /></Redo>
     </WeatherCard>
   )
 }
