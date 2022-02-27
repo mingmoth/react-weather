@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import styled from "@emotion/styled"
 
 import { ReactComponent as CloudyIcon } from './assets/images/day-cloudy.svg';
@@ -92,16 +92,24 @@ const Redo = styled.div`
 
 
 const WeatherApp = () => {
-  const [currentWeather, setCurrentWeather] = useState({
-    observationTime: '2019-10-02 22:10:00',
-    locationName: '臺北市',
-    description: '多雲時晴',
-    temperature: 27.5,
-    windSpeed: 0.3,
-    humid: 0.88,
+  const [weatherItem, setWeatherItem] = useState({
+    observationTime: new Date(),
+    locationName: '',
+    humid: 0,
+    temperature: 0,
+    windSpeed: 0,
+    description: '',
+    weatherCode: 0,
+    rainPossibility: 0,
+    comfortability: '',
   })
 
-  const handleClick = () => {
+  useEffect(() => {
+    fetchCurrentWeather()
+    fetchWeatherForecast()
+  }, [])
+
+  const fetchCurrentWeather = () => {
     fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北')
       .then(response => response.json())
       .then(data => {
@@ -112,39 +120,64 @@ const WeatherApp = () => {
           }
           return neededElements
         })
-        setCurrentWeather({
+        setWeatherItem(preState => ({
+          ...preState,
           observationTime: locationData.time.obsTime,
           locationName: locationData.locationName,
-          description: '多雲時晴',
           temperature: weatherElements.TEMP,
           windSpeed: weatherElements.WDSD,
           humid: weatherElements.HUMD,
-        })
+        }))
       })
-    
+  }
+  const fetchWeatherForecast = () => {
+    fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北市')
+      .then(response => response.json())
+      .then(data => {
+        const locationData = data.records.location[0]
+        console.log(locationData)
+        const weatherElements = locationData.weatherElement.reduce((neededElements, item) => {
+          neededElements[item.elementName] = item.time[0].parameter
+          return neededElements
+        }, {})
+
+        setWeatherItem((preState) => {
+          return {
+            ...preState,
+            description: weatherElements.Wx.parameterName,
+            weatherCode: weatherElements.Wx.parameterValue,
+            rainPossibility: weatherElements.PoP.parameterName,
+            comfortability: weatherElements.CI.parameterName,
+          }
+        })
+        
+      })
   }
   return (
     <WeatherCard>
-      <Location>{currentWeather.locationName}</Location>
-      <Description>{currentWeather.description}</Description>
+      <Location>{weatherItem.locationName}</Location>
+      <Description>{weatherItem.description} {weatherItem.comfortability}</Description>
       <CurrentWeather>
         <Temperature>
-          {currentWeather.temperature} <Celsius>°C</Celsius>
+          {weatherItem.temperature} <Celsius>°C</Celsius>
         </Temperature>
         <CloudyIcon />
       </CurrentWeather>
       <AirFlow>
         <AirFlowIcon />
-        {currentWeather.windSpeed} m/h
+        {weatherItem.windSpeed} m/h
       </AirFlow>
-      <Rain><RainIcon />{Math.round(currentWeather.humid*100)}%</Rain>
+      <Rain><RainIcon />{Math.round(weatherItem.rainPossibility*100)}%</Rain>
       <Redo>
         最後觀測時間：
         {new Intl.DateTimeFormat('zh-TW', {
           hour: 'numeric',
           minute: 'numeric',
-        }).format(new Date(currentWeather.observationTime))}{' '}
-        <RedoIcon onClick={handleClick}/>
+        }).format(new Date(weatherItem.observationTime))}{' '}
+        <RedoIcon onClick={() => {
+          fetchCurrentWeather(); 
+          fetchWeatherForecast()
+        }}/>
       </Redo >
     </WeatherCard>
   )
