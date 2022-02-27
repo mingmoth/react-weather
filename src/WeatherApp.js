@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react'
+=======
+import React, { useState } from 'react'
+>>>>>>> a2139f32edf4e8eb9a7ed069449b474975cba9ee
 import styled from "@emotion/styled"
 
 import { ReactComponent as CloudyIcon } from './assets/images/day-cloudy.svg';
