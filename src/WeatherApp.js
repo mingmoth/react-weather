@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react'
-=======
-import React, { useState } from 'react'
->>>>>>> a2139f32edf4e8eb9a7ed069449b474975cba9ee
 import styled from "@emotion/styled"
 
 import { ReactComponent as CloudyIcon } from './assets/images/day-cloudy.svg';
@@ -92,7 +88,7 @@ const Redo = styled.div`
     height: 15px;
     cursor: pointer;
   }
-` 
+`
 
 
 const WeatherApp = () => {
@@ -109,12 +105,21 @@ const WeatherApp = () => {
   })
 
   useEffect(() => {
-    fetchCurrentWeather()
-    fetchWeatherForecast()
+    const fetchData = async () => {
+      const [currentWeather, weatherForecast] = await Promise.all([
+        fetchCurrentWeather(),
+        fetchWeatherForecast(),
+      ])
+      setWeatherItem({
+        ...currentWeather,
+        ...weatherForecast
+      })
+    }
+    fetchData()
   }, [])
 
   const fetchCurrentWeather = () => {
-    fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北')
+    return fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北')
       .then(response => response.json())
       .then(data => {
         const locationData = data.records.location[0]
@@ -123,38 +128,35 @@ const WeatherApp = () => {
             neededElements[item.elementName] = item.elementValue
           }
           return neededElements
-        })
-        setWeatherItem(preState => ({
-          ...preState,
+        }, {})
+        return {
           observationTime: locationData.time.obsTime,
           locationName: locationData.locationName,
           temperature: weatherElements.TEMP,
           windSpeed: weatherElements.WDSD,
           humid: weatherElements.HUMD,
-        }))
+        }
       })
   }
   const fetchWeatherForecast = () => {
-    fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北市')
+    return fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北市')
       .then(response => response.json())
       .then(data => {
         const locationData = data.records.location[0]
-        console.log(locationData)
         const weatherElements = locationData.weatherElement.reduce((neededElements, item) => {
           neededElements[item.elementName] = item.time[0].parameter
           return neededElements
-        }, {})
+        },{})
 
-        setWeatherItem((preState) => {
-          return {
-            ...preState,
-            description: weatherElements.Wx.parameterName,
-            weatherCode: weatherElements.Wx.parameterValue,
-            rainPossibility: weatherElements.PoP.parameterName,
-            comfortability: weatherElements.CI.parameterName,
-          }
-        })
-        
+
+        return {
+          description: weatherElements.Wx.parameterName,
+          weatherCode: weatherElements.Wx.parameterValue,
+          rainPossibility: weatherElements.PoP.parameterName,
+          comfortability: weatherElements.CI.parameterName,
+        }
+
+
       })
   }
   return (
@@ -171,7 +173,7 @@ const WeatherApp = () => {
         <AirFlowIcon />
         {weatherItem.windSpeed} m/h
       </AirFlow>
-      <Rain><RainIcon />{Math.round(weatherItem.rainPossibility*100)}%</Rain>
+      <Rain><RainIcon />{Math.round(weatherItem.rainPossibility * 100)}%</Rain>
       <Redo>
         最後觀測時間：
         {new Intl.DateTimeFormat('zh-TW', {
@@ -179,9 +181,9 @@ const WeatherApp = () => {
           minute: 'numeric',
         }).format(new Date(weatherItem.observationTime))}{' '}
         <RedoIcon onClick={() => {
-          fetchCurrentWeather(); 
+          fetchCurrentWeather();
           fetchWeatherForecast()
-        }}/>
+        }} />
       </Redo >
     </WeatherCard>
   )
