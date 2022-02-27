@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 import styled from "@emotion/styled"
 
 import { ReactComponent as CloudyIcon } from './assets/images/day-cloudy.svg';
@@ -92,23 +92,60 @@ const Redo = styled.div`
 
 
 const WeatherApp = () => {
+  const [currentWeather, setCurrentWeather] = useState({
+    observationTime: '2019-10-02 22:10:00',
+    locationName: '臺北市',
+    description: '多雲時晴',
+    temperature: 27.5,
+    windSpeed: 0.3,
+    humid: 0.88,
+  })
 
+  const handleClick = () => {
+    fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北')
+      .then(response => response.json())
+      .then(data => {
+        const locationData = data.records.location[0]
+        const weatherElements = locationData.weatherElement.reduce((neededElements, item) => {
+          if (['WDSD', 'TEMP', 'HUMD'].includes(item.elementName)) {
+            neededElements[item.elementName] = item.elementValue
+          }
+          return neededElements
+        })
+        setCurrentWeather({
+          observationTime: locationData.time.obsTime,
+          locationName: locationData.locationName,
+          description: '多雲時晴',
+          temperature: weatherElements.TEMP,
+          windSpeed: weatherElements.WDSD,
+          humid: weatherElements.HUMD,
+        })
+      })
+    
+  }
   return (
     <WeatherCard>
-      <Location>台北市</Location>
-      <Description>多雲時晴</Description>
+      <Location>{currentWeather.locationName}</Location>
+      <Description>{currentWeather.description}</Description>
       <CurrentWeather>
         <Temperature>
-          23 <Celsius>°C</Celsius>
+          {currentWeather.temperature} <Celsius>°C</Celsius>
         </Temperature>
         <CloudyIcon />
       </CurrentWeather>
       <AirFlow>
         <AirFlowIcon />
-        23 m/h
+        {currentWeather.windSpeed} m/h
       </AirFlow>
-      <Rain><RainIcon />48%</Rain>
-      <Redo><RedoIcon /></Redo>
+      <Rain><RainIcon />{Math.round(currentWeather.humid*100)}%</Rain>
+      <Redo>
+        最後觀測時間：
+        {new Intl.DateTimeFormat('zh-TW', {
+          hour: 'numeric',
+          minute: 'numeric',
+        }).format(new Date(currentWeather.observationTime))}{' '}
+        <RedoIcon onClick={handleClick}/>
+      </Redo >
     </WeatherCard>
   )
 }
