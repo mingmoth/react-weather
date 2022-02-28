@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import styled from "@emotion/styled"
 
 import WeatherIcon from './WeatherIcon'
 
 import { ReactComponent as AirFlowIcon } from './assets/images/airFlow.svg';
 import { ReactComponent as RainIcon } from './assets/images/rain.svg';
-import { ReactComponent as RedoIcon } from './assets/images/refresh.svg';
+import { ReactComponent as RefreshIcon } from './assets/images/refresh.svg';
+import { ReactComponent as LoadingIcon } from './assets/images/loading.svg';
 
 const WeatherCard = styled.div`
     position: relative;
@@ -74,7 +75,7 @@ const Rain = styled.div`
   }
 `;
 
-const Redo = styled.div`
+const Refresh = styled.div`
   position: absolute;
   right: 15px;
   bottom: 15px;
@@ -88,6 +89,16 @@ const Redo = styled.div`
     width: 15px;
     height: 15px;
     cursor: pointer;
+    animation: rotate infinite 1.5s linear;
+    animation-duration: ${({ isLoading }) => (isLoading ? '1.5s' : '0s')};
+  }
+  @keyframes rotate {
+    from {
+      transform: rotate(360deg);
+    }
+    to {
+      transform: rotate(0deg);
+    }
   }
 `
 const fetchCurrentWeather = () => {
@@ -110,6 +121,7 @@ const fetchCurrentWeather = () => {
       }
     })
 }
+
 const fetchWeatherForecast = () => {
   return fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北市')
     .then(response => response.json())
@@ -120,15 +132,12 @@ const fetchWeatherForecast = () => {
         return neededElements
       }, {})
 
-
       return {
         description: weatherElements.Wx.parameterName,
         weatherCode: weatherElements.Wx.parameterValue,
         rainPossibility: weatherElements.PoP.parameterName,
         comfortability: weatherElements.CI.parameterName,
       }
-
-
     })
 }
 
@@ -136,7 +145,7 @@ const fetchSunriseNset = () => {
   const currentDay = new Date().toISOString().slice(0, 10)
   let tomorrow = new Date(new Date())
   tomorrow = new Date(tomorrow.setDate(tomorrow.getDate() + 1)).toISOString().slice(0, 10)
-  fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/A-B0062-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&format=JSON&locationName=%E8%87%BA%E5%8C%97%E5%B8%82&timeFrom=${currentDay}&timeTo=${tomorrow}`)
+  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/A-B0062-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&format=JSON&locationName=%E8%87%BA%E5%8C%97%E5%B8%82&timeFrom=${currentDay}&timeTo=${tomorrow}`)
     .then(response => response.json())
     .then(data => {
       const currentDate = data.records.locations.location[0].time[0].dataTime
@@ -150,13 +159,13 @@ const fetchSunriseNset = () => {
       const currentTime = new Date().getTime()
       const sunrise = new Date(`${currentDate} ${weatherElements['日出時刻']}`).getTime()
       const sunset = new Date(`${currentDate} ${weatherElements['日沒時刻']}`).getTime()
-      return currentTime<sunrise || currentTime>sunset ? 'night': 'day'
-      
+      return {
+        moment: currentTime < sunrise || currentTime > sunset ? 'night' : 'day'
+      }
     })
 }
 
 const WeatherApp = () => {
-  console.log('start')
   const [weatherItem, setWeatherItem] = useState({
     observationTime: new Date(),
     locationName: '',
@@ -167,55 +176,72 @@ const WeatherApp = () => {
     weatherCode: 0,
     rainPossibility: 0,
     comfortability: '',
+    isLoading: true,
+    moment: 'day',
   })
+  const {
+    observationTime,
+    locationName,
+    temperature,
+    windSpeed,
+    description,
+    weatherCode,
+    rainPossibility,
+    comfortability,
+    isLoading,
+    moment,
+  } = weatherItem
 
-  const moment = useMemo(() => fetchSunriseNset(), [])
+const fetchData = useCallback(() => {
+  const fetchingData = async () => {
+    const [currentWeather, weatherForecast, currentMoment] = await Promise.all([
+      fetchCurrentWeather(),
+      fetchWeatherForecast(),
+      fetchSunriseNset(),
+    ])
+    setWeatherItem({
+      ...currentWeather,
+      ...weatherForecast,
+      ...currentMoment,
+      isLoading: false,
+    })
+  }
+  setWeatherItem(preState => ({
+    ...preState,
+    isLoading: true
+  }))
+  fetchingData()
+}, [])
 
-  const fetchData = useCallback(() => {
-    const fetchingData = async () => {
-      const [currentWeather, weatherForecast] = await Promise.all([
-        fetchCurrentWeather(),
-        fetchWeatherForecast(),
-        fetchSunriseNset()
-      ])
-      setWeatherItem({
-        ...currentWeather,
-        ...weatherForecast
-      })
-    }
-    console.log('render')
-    fetchingData()
-  }, [])
+useEffect(() => {
+  fetchData()
+}, [fetchData])
 
-  useEffect(() => {
-    fetchData()
-  }, [fetchData])
-  
-  return (
-    <WeatherCard>
-      <Location>{weatherItem.locationName}</Location>
-      <Description>{weatherItem.description} {weatherItem.comfortability}</Description>
-      <CurrentWeather>
-        <Temperature>
-          {Math.round(weatherItem.temperature)} <Celsius>°C</Celsius>
-        </Temperature>
-        <WeatherIcon currentWeatherCode={weatherItem.weatherCode} moment={moment || 'day'}/>
-      </CurrentWeather>
-      <AirFlow>
-        <AirFlowIcon />
-        {weatherItem.windSpeed} m/h
-      </AirFlow>
-      <Rain><RainIcon />{Math.round(weatherItem.rainPossibility * 100)}%</Rain>
-      <Redo>
-        最後觀測時間：
-        {new Intl.DateTimeFormat('zh-TW', {
-          hour: 'numeric',
-          minute: 'numeric',
-        }).format(new Date(weatherItem.observationTime))}{' '}
-        <RedoIcon onClick={fetchData} />
-      </Redo >
-    </WeatherCard>
-  )
+return (
+  <WeatherCard>
+    <Location>{locationName}</Location>
+    <Description>{description} {comfortability}</Description>
+    <CurrentWeather>
+      <Temperature>
+        {Math.round(temperature)} <Celsius>°C</Celsius>
+      </Temperature>
+      <WeatherIcon currentWeatherCode={weatherCode} moment={moment} />
+    </CurrentWeather>
+    <AirFlow>
+      <AirFlowIcon />
+      {windSpeed} m/h
+    </AirFlow>
+    <Rain><RainIcon />{Math.round(rainPossibility * 100)}%</Rain>
+    <Refresh onClick={fetchData} isLoading={isLoading}>
+      最後觀測時間：
+      {new Intl.DateTimeFormat('zh-TW', {
+        hour: 'numeric',
+        minute: 'numeric',
+      }).format(new Date(observationTime))}{' '}
+      {isLoading ? <LoadingIcon /> : <RefreshIcon />}
+    </Refresh >
+  </WeatherCard>
+)
 }
 
 export default WeatherApp
