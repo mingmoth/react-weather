@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import styled from "@emotion/styled"
 
-import { ReactComponent as CloudyIcon } from './assets/images/day-cloudy.svg';
+import WeatherIcon from './WeatherIcon'
+
 import { ReactComponent as AirFlowIcon } from './assets/images/airFlow.svg';
 import { ReactComponent as RainIcon } from './assets/images/rain.svg';
 import { ReactComponent as RedoIcon } from './assets/images/refresh.svg';
@@ -131,7 +132,31 @@ const fetchWeatherForecast = () => {
     })
 }
 
+const fetchSunriseNset = () => {
+  const currentDay = new Date().toISOString().slice(0, 10)
+  let tomorrow = new Date(new Date())
+  tomorrow = new Date(tomorrow.setDate(tomorrow.getDate() + 1)).toISOString().slice(0, 10)
+  fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/A-B0062-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&format=JSON&locationName=%E8%87%BA%E5%8C%97%E5%B8%82&timeFrom=${currentDay}&timeTo=${tomorrow}`)
+    .then(response => response.json())
+    .then(data => {
+      const currentDate = data.records.locations.location[0].time[0].dataTime
+      const locationData = data.records.locations.location[0].time[0].parameter
+      const weatherElements = locationData.reduce((neededElements, item) => {
+        if (['日出時刻', '日沒時刻'].includes(item.parameterName)) {
+          neededElements[item.parameterName] = item.parameterValue
+        }
+        return neededElements
+      }, {})
+      const currentTime = new Date().getTime()
+      const sunrise = new Date(`${currentDate} ${weatherElements['日出時刻']}`).getTime()
+      const sunset = new Date(`${currentDate} ${weatherElements['日沒時刻']}`).getTime()
+      return currentTime<sunrise || currentTime>sunset ? 'night': 'day'
+      
+    })
+}
+
 const WeatherApp = () => {
+  console.log('start')
   const [weatherItem, setWeatherItem] = useState({
     observationTime: new Date(),
     locationName: '',
@@ -144,17 +169,21 @@ const WeatherApp = () => {
     comfortability: '',
   })
 
+  const moment = useMemo(() => fetchSunriseNset(), [])
+
   const fetchData = useCallback(() => {
     const fetchingData = async () => {
       const [currentWeather, weatherForecast] = await Promise.all([
         fetchCurrentWeather(),
         fetchWeatherForecast(),
+        fetchSunriseNset()
       ])
       setWeatherItem({
         ...currentWeather,
         ...weatherForecast
       })
     }
+    console.log('render')
     fetchingData()
   }, [])
 
@@ -168,9 +197,9 @@ const WeatherApp = () => {
       <Description>{weatherItem.description} {weatherItem.comfortability}</Description>
       <CurrentWeather>
         <Temperature>
-          {weatherItem.temperature} <Celsius>°C</Celsius>
+          {Math.round(weatherItem.temperature)} <Celsius>°C</Celsius>
         </Temperature>
-        <CloudyIcon />
+        <WeatherIcon currentWeatherCode={weatherItem.weatherCode} moment={moment || 'day'}/>
       </CurrentWeather>
       <AirFlow>
         <AirFlowIcon />
