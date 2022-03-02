@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback} from 'react'
 
 const fetchCurrentWeather = (locationName) => {
-  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=${locationName}`)
+  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=${process.env.REACT_APP_OWA}&locationName=${locationName}`)
     .then(response => response.json())
     .then(data => {
       const locationData = data.records.location[0]
@@ -22,7 +22,7 @@ const fetchCurrentWeather = (locationName) => {
 }
 
 const fetchWeatherForecast = (cityName) => {
-  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=${cityName}`)
+  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=${process.env.REACT_APP_OWA}&locationName=${cityName}`)
     .then(response => response.json())
     .then(data => {
       const locationData = data.records.location[0]
@@ -44,7 +44,7 @@ const fetchSunriseNset = (cityName) => {
   const currentDay = new Date().toISOString().slice(0, 10)
   let tomorrow = new Date(new Date())
   tomorrow = new Date(tomorrow.setDate(tomorrow.getDate() + 1)).toISOString().slice(0, 10)
-  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/A-B0062-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&format=JSON&locationName=${cityName}&timeFrom=${currentDay}&timeTo=${tomorrow}`)
+  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/A-B0062-001?Authorization=${process.env.REACT_APP_OWA}&format=JSON&locationName=${cityName}&timeFrom=${currentDay}&timeTo=${tomorrow}`)
     .then(response => response.json())
     .then(data => {
       const currentDate = data.records.locations.location[0].time[0].dataTime
