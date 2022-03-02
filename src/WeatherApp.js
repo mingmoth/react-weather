@@ -36,16 +36,18 @@ const Container = styled.div`
 
 
 const WeatherApp = () => {
+  const storageCity = localStorage.getItem('cityName')
   const [currentMode, setCurrentMode] = useState('')
   const [currentPage, setCurrentPage] = useState('WeatherCard')
-  const [currentCity, setCurrentCity] = useState('臺北市')
+  const [currentCity, setCurrentCity] = useState(storageCity || '臺北市')
   const currentLocation = findLocation(currentCity)
   const [weatherItem, fetchData] = useWeatherApi(currentLocation)
   const { moment } = weatherItem
 
   useEffect(() => {
     setCurrentMode(moment === 'day' ? 'light' : 'dark')
-  }, [moment])
+    localStorage.setItem('cityName', currentCity)
+  }, [moment, currentCity])
 
   return (
     <Container theme={theme[currentMode]}>
