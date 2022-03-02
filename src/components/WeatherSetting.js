@@ -118,7 +118,8 @@ const WeatherSetting = ({ theme, currentMode, setCurrentPage, cityName, setCurre
         name="location"
         ref={inputLocationRef}
         onChange={handleChange}
-        value={locationName}/>
+        value={locationName}
+        theme={theme[currentMode]}/>
       <datalist id="location-list">
         {/* 定義 datalist 中的 options*/}
         {locations.map(location => (
