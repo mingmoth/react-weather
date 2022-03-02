@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback} from 'react'
 
-const fetchCurrentWeather = () => {
-  return fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北')
+const fetchCurrentWeather = (locationName) => {
+  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/O-A0003-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=${locationName}`)
     .then(response => response.json())
     .then(data => {
       const locationData = data.records.location[0]
@@ -21,8 +21,8 @@ const fetchCurrentWeather = () => {
     })
 }
 
-const fetchWeatherForecast = () => {
-  return fetch('https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=臺北市')
+const fetchWeatherForecast = (cityName) => {
+  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/F-C0032-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&locationName=${cityName}`)
     .then(response => response.json())
     .then(data => {
       const locationData = data.records.location[0]
@@ -40,11 +40,11 @@ const fetchWeatherForecast = () => {
     })
 }
 
-const fetchSunriseNset = () => {
+const fetchSunriseNset = (cityName) => {
   const currentDay = new Date().toISOString().slice(0, 10)
   let tomorrow = new Date(new Date())
   tomorrow = new Date(tomorrow.setDate(tomorrow.getDate() + 1)).toISOString().slice(0, 10)
-  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/A-B0062-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&format=JSON&locationName=%E8%87%BA%E5%8C%97%E5%B8%82&timeFrom=${currentDay}&timeTo=${tomorrow}`)
+  return fetch(`https://opendata.cwb.gov.tw/api/v1/rest/datastore/A-B0062-001?Authorization=CWB-0EFE490A-BF4C-40C8-9056-C7A2A29AC6FF&format=JSON&locationName=${cityName}&timeFrom=${currentDay}&timeTo=${tomorrow}`)
     .then(response => response.json())
     .then(data => {
       const currentDate = data.records.locations.location[0].time[0].dataTime
@@ -64,7 +64,8 @@ const fetchSunriseNset = () => {
     })
 }
 
-const useWeatherApi = () => {
+const useWeatherApi = (currentLocation) => {
+  const { locationName, cityName } = currentLocation
   const [weatherItem, setWeatherItem] = useState({
     observationTime: new Date(),
     locationName: '',
@@ -82,9 +83,9 @@ const useWeatherApi = () => {
   const fetchData = useCallback(() => {
     const fetchingData = async () => {
       const [currentWeather, weatherForecast, currentMoment] = await Promise.all([
-        fetchCurrentWeather(),
-        fetchWeatherForecast(),
-        fetchSunriseNset(),
+        fetchCurrentWeather(locationName),
+        fetchWeatherForecast(cityName),
+        fetchSunriseNset(cityName),
       ])
       setWeatherItem({
         ...currentWeather,
@@ -98,7 +99,7 @@ const useWeatherApi = () => {
       isLoading: true
     }))
     fetchingData()
-  }, [])
+  }, [locationName, cityName])
 
   useEffect(() => {
     fetchData()

@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import styled from "@emotion/styled"
+import { findLocation } from './utils';
 import useWeatherApi from './useWeatherApi';
 import WeatherCard  from './components/WeatherCard';
+import WeatherSetting from './components/WeatherSetting'
 
 const theme = {
   light: {
@@ -35,7 +37,10 @@ const Container = styled.div`
 
 const WeatherApp = () => {
   const [currentMode, setCurrentMode] = useState('')
-  const [weatherItem, fetchData ] = useWeatherApi()
+  const [currentPage, setCurrentPage] = useState('WeatherCard')
+  const [currentCity, setCurrentCity] = useState('臺北市')
+  const currentLocation = findLocation(currentCity)
+  const [weatherItem, fetchData] = useWeatherApi(currentLocation)
   const { moment } = weatherItem
 
   useEffect(() => {
@@ -44,11 +49,14 @@ const WeatherApp = () => {
 
   return (
     <Container theme={theme[currentMode]}>
-      <WeatherCard weatherItem={weatherItem} fetchData={fetchData} theme={theme} currentMode={currentMode}/>
+      {currentPage === 'WeatherCard' && (
+        <WeatherCard weatherItem={weatherItem} fetchData={fetchData} theme={theme} currentMode={currentMode} setCurrentPage={setCurrentPage} cityName={currentLocation.cityName}/>
+      )}
+      {currentPage === 'WeatherSetting' && (
+        <WeatherSetting weatherItem={weatherItem} fetchData={fetchData} theme={theme} currentMode={currentMode} setCurrentPage={setCurrentPage} cityName={currentLocation.cityName} setCurrentCity={setCurrentCity} />
+      )}
     </Container>
-
   )
 }
-
 
 export default WeatherApp

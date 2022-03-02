@@ -7,6 +7,7 @@ import { ReactComponent as AirFlowIcon } from '../assets/images/airFlow.svg';
 import { ReactComponent as RainIcon } from '../assets/images/rain.svg';
 import { ReactComponent as RefreshIcon } from '../assets/images/refresh.svg';
 import { ReactComponent as LoadingIcon } from '../assets/images/loading.svg';
+import { ReactComponent as CogIcon } from '../assets/images/cog.svg'
 
 const WeatherCardWrapper = styled.div`
   position: relative;
@@ -101,12 +102,20 @@ const Refresh = styled.div`
       transform: rotate(0deg);
     }
   }
+`;
+
+const Cog = styled(CogIcon)`
+  position: absolute;
+  top: 30px;
+  right: 15px;
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
 `
 
-const WeatherCard = ({ theme, currentMode, weatherItem, fetchData }) => {
+const WeatherCard = ({ theme, currentMode, weatherItem, fetchData, setCurrentPage, cityName }) => {
   const {
     observationTime,
-    locationName,
     temperature,
     windSpeed,
     description,
@@ -118,7 +127,8 @@ const WeatherCard = ({ theme, currentMode, weatherItem, fetchData }) => {
   } = weatherItem
   return (
     <WeatherCardWrapper theme={theme[currentMode]}>
-      <Location theme={theme[currentMode]}>{locationName}</Location>
+      <Cog onClick={() => setCurrentPage('WeatherSetting')}/>
+      <Location theme={theme[currentMode]}>{cityName}</Location>
       <Description theme={theme[currentMode]}>{description} {comfortability}</Description>
       <CurrentWeather theme={theme[currentMode]}>
         <Temperature theme={theme[currentMode]}>
